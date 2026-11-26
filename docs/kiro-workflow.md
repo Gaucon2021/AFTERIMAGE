@@ -1,0 +1,2 @@
+# Kiro execution checklist
+Open the repository in Kiro. Review .kiro/specs/incident-replay requirements, design, and tasks; use the spec task workflow to implement and review additional real incident scenarios. Run node --test within Kiro. Record actual Kiro tool usage and the resulting diff; the presence of .kiro files alone does not establish compliance. Keep all data synthetic or approved for publication. Do not use paid model quotas without approval.
