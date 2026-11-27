@@ -7,3 +7,7 @@ test("edited input rejected",async()=>{const p=await freeze(incident,{1:10});p.e
 test("bad original trace rejected",async()=>assert.rejects(freeze([{...incident[0],seq:9}],{})));
 test("invalid intervention rejected",async()=>assert.rejects(freeze(incident,{99:8})));
 test("hash stable",async()=>assert.equal((await freeze(incident,{1:10})).sha256,(await freeze(incident,{1:10})).sha256));
+
+test("sparse array rejected",()=>assert.throws(()=>canonical(Array(2))));
+test("deep or cyclic evidence rejected",()=>{const x={};x.self=x;assert.throws(()=>canonical(x),/limits/);});
+test("oversized strings rejected",()=>assert.throws(()=>canonical("x".repeat(12001)),/limit/));
