@@ -1,10 +1,20 @@
 import {compare} from "./workbench.mjs";
-export function canonical(v){
- if(v===null||typeof v==="boolean"||typeof v==="string")return JSON.stringify(v);
- if(typeof v==="number"&&Number.isFinite(v))return JSON.stringify(v);
- if(Array.isArray(v))return "["+v.map(canonical).join(",")+"]";
- if(v&&Object.getPrototypeOf(v)===Object.prototype)return "{"+Object.keys(v).sort().map(k=>JSON.stringify(k)+":"+canonical(v[k])).join(",")+"}";
- throw Error("Unsupported evidence value");
+export function canonical(value){
+ let budget=50000;
+ function encode(v,depth){
+  if(--budget<0||depth>32)throw Error("Evidence structure exceeds limits");
+  if(typeof v==="string"){if(v.length>12000)throw Error("Evidence string exceeds limit");return JSON.stringify(v);}
+  if(v===null||typeof v==="boolean")return JSON.stringify(v);
+  if(typeof v==="number"&&Number.isFinite(v))return JSON.stringify(v);
+  if(Array.isArray(v)){
+   if(v.length>5000)throw Error("Evidence array exceeds limit");
+   const entries=[];for(let i=0;i<v.length;i++){if(!Object.hasOwn(v,i))throw Error("Sparse evidence array");entries.push(encode(v[i],depth+1));}
+   return "["+entries.join(",")+"]";
+  }
+  if(v&&Object.getPrototypeOf(v)===Object.prototype){const keys=Object.keys(v).sort();if(keys.length>5000)throw Error("Evidence object exceeds limit");return "{"+keys.map(k=>{if(k.length>1000)throw Error("Evidence key exceeds limit");return JSON.stringify(k)+":"+encode(v[k],depth+1)}).join(",")+"}";}
+  throw Error("Unsupported evidence value");
+ }
+ const text=encode(value,0);if(text.length>2000000)throw Error("Evidence exceeds size limit");return text;
 }
 async function hash(v){const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(canonical(v)));return Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,"0")).join("");}
 export async function freeze(events,intervention){
